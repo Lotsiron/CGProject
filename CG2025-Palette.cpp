@@ -6,3 +6,15 @@
 int countUniqueColors(){
     // to be made
 }
+void processWithImposedPalette(){
+    // to be made
+}
+void processWithImposedGreyscale(){
+    // to be made
+}
+void processWithDedicatedPalette(){
+    // to be made
+}
+void processWithDedicatedGreyscale(){
+    // to be made
+}

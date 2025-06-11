@@ -4,13 +4,21 @@
 #include "CG2025-Palette.h"
 #include "CG2025-Files.h"
 
+void applyBayerDithering(){
+    // to be made
+}
+void applyFloydSteinbergDithering(){
+    // to be made
+}
 
+
+// user selected options
 void Function1() {
     // Ask dithering
     char ditherChoice;
     cout << "Do you want dithering? (Y/N): ";
     cin >> ditherChoice;
-    ditherChoice = std::toupper(ditherChoice); // in case the user inputs "y" turns it into "Y"
+    ditherChoice = toupper(ditherChoice); // in case the user inputs "y" turns it into "Y"
 
     if (ditherChoice == 'Y') {
         int method;
@@ -25,7 +33,7 @@ void Function1() {
         else if (method == 2)
             dithering = 2;
         else {
-            std::cout << "Invalid choice. No dithering will be applied.\n";
+            cout << "Invalid choice. No dithering will be applied.\n";
             dithering = 0;
         }
     } else {
@@ -63,17 +71,27 @@ void Function1() {
     SDL_UpdateWindowSurface(window);
 }
 
-
+// Color Reduction and saving
 void Function2() {
-
-    //...
-
+    if (mode == 1) {
+        processWithImposedPalette();         // quantizes to imposed palette, shows result
+    } else if (mode == 2) {
+        processWithImposedGreyscale();       // 6-bit greyscale
+    } else if (mode == 3) {
+        processWithDedicatedGreyscale();     // builds and applies dedicated greyscale palette
+    } else if (mode == 4) {
+        processWithDedicatedPalette();       // builds and applies full-color dedicated palette
+    } else {
+        cout << "Invalid mode selected.\n";
+        return;
+    }
     SDL_UpdateWindowSurface(window);
 }
 
+//  Loading
 void Function3() {
 
-    //...
+    // Load the image from the file
 
     SDL_UpdateWindowSurface(window);
 }
@@ -119,6 +137,7 @@ void Function9() {
 
     SDL_UpdateWindowSurface(window);
 }
+
 
 
 void setPixel(int x, int y, Uint8 R, Uint8 G, Uint8 B)

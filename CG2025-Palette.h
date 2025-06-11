@@ -9,5 +9,9 @@
 using namespace std;
 
 int countUniqueColors();
+void processWithImposedPalette();
+void processWithImposedGreyscale();
+void processWithDedicatedGreyscale();
+void processWithDedicatedPalette();
 
 #endif // CG2025_PALETTE_H_INCLUDED
