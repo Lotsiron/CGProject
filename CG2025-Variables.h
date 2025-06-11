@@ -15,6 +15,9 @@ extern SDL_Surface* screen;
 
 extern SDL_Color palette8[screenWidth*screenHeight];
 extern int howManyColours;
+extern int mode;
+extern int dithering;
+extern int compression;
 
 
 #endif // CG2025_VARIABLES_H_INCLUDED

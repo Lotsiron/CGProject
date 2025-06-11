@@ -2,3 +2,7 @@
 #include "CG2025-Palette.h"
 #include "CG2025-Variables.h"
 #include "CG2025-Functions.h"
+
+int countUniqueColors(){
+    // to be made
+}

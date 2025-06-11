@@ -6,11 +6,63 @@
 
 
 void Function1() {
+    // Ask dithering
+    char ditherChoice;
+    cout << "Do you want dithering? (Y/N): ";
+    cin >> ditherChoice;
+    ditherChoice = std::toupper(ditherChoice); // in case the user inputs "y" turns it into "Y"
 
-    //...
+    if (ditherChoice == 'Y') {
+        int method;
+        cout << "Choose dithering method:\n";
+        cout << "1. Bayer 4x4\n";
+        cout << "2. Floyd-Steinberg\n";
+        cout << "Enter choice (1 or 2): ";
+        cin >> method;
+
+        if (method == 1)
+            dithering = 1;
+        else if (method == 2)
+            dithering = 2;
+        else {
+            std::cout << "Invalid choice. No dithering will be applied.\n";
+            dithering = 0;
+        }
+    } else {
+        dithering = 0;
+    }
+
+    // Ask color mode
+    // it is a loop so if user enters incorrectly, it goes back to the start
+    while (true) {
+        cout << "Choose color mode:\n";
+        cout << "1. Imposed Palette (6-bit)\n";
+        cout << "2. Imposed Greyscale (6-bit)\n";
+        cout << "3. Dedicated Greyscale (24-bit, max 64 colors)\n";
+        cout << "4. Dedicated Palette (24-bit, max 64 colors)\n";
+        cout << "Enter choice (1-4): ";
+        cin >> mode;
+
+        if (mode == 3 || mode == 4) {
+            int colorCount = countUniqueColors();
+            if (colorCount > 64) {
+                cout << "Too many colors (" << colorCount << ") for dedicated mode, it needs to be 64 or under. Please choose another.\n";
+                continue; // loop again
+            } else {
+                howManyColours = colorCount;
+                cout << "Using dedicated mode with " << colorCount << " unique colors.\n";
+                break;
+            }
+        } else if (mode >= 1 && mode <= 4) {
+            break;
+        } else {
+            cout << "Invalid selection.\n";
+        }
+    }
 
     SDL_UpdateWindowSurface(window);
 }
+
 
 void Function2() {
 
@@ -67,7 +119,6 @@ void Function9() {
 
     SDL_UpdateWindowSurface(window);
 }
-
 
 
 void setPixel(int x, int y, Uint8 R, Uint8 G, Uint8 B)

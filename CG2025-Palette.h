@@ -8,4 +8,6 @@
 #include <cmath>
 using namespace std;
 
+int countUniqueColors();
+
 #endif // CG2025_PALETTE_H_INCLUDED
