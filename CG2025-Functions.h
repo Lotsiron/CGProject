@@ -3,6 +3,7 @@
 #define CG2025_FUNCTIONS_H_INCLUDED
 
 #include <stdio.h>
+#include <cmath>
 #include <math.h>
 #include <SDL2/SDL.h>
 

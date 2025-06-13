@@ -45,9 +45,9 @@ void Function1() {
     while (true) {
         cout << "Choose color mode:\n";
         cout << "1. Imposed Palette (6-bit)\n";
-        cout << "2. Imposed Greyscale (6-bit)\n";
-        cout << "3. Dedicated Greyscale (24-bit, max 64 colors)\n";
-        cout << "4. Dedicated Palette (24-bit, max 64 colors)\n";
+        cout << "2. Imposed Grayscale (6-bit)\n";
+        cout << "3. Dedicated Palette (24-bit, max 64 colors)\n";
+        cout << "4. Dedicated Grayscale (24-bit, max 64 colors)\n";
         cout << "Enter choice (1-4): ";
         cin >> mode;
 
@@ -65,9 +65,26 @@ void Function1() {
             break;
         } else {
             cout << "Invalid selection.\n";
+            continue;
         }
     }
+    cout << endl << " The selected options are: ";
+    if(dithering==0)
+        cout << "No dithering, ";
+    if(dithering==1)
+        cout << "Bayer4x4 Dithering, ";
+    if(dithering==2)
+        cout << "Floyd-Steinberg Dithering, ";
+    if(mode==1)
+        cout << "Imposed Palette \n";
+    if(mode==2)
+        cout << "Imposed Greyscale \n";
+    if(mode==3)
+        cout << "Dedicated Palette \n";
+    if(mode==4)
+        cout << "Dedicated Greyscale \n";
 
+    cout<< " Options are saved, press 2 on the screen to process the image on the screen \n";
     SDL_UpdateWindowSurface(window);
 }
 
@@ -78,9 +95,9 @@ void Function2() {
     } else if (mode == 2) {
         processWithImposedGreyscale();       // 6-bit greyscale
     } else if (mode == 3) {
-        processWithDedicatedGreyscale();     // builds and applies dedicated greyscale palette
-    } else if (mode == 4) {
         processWithDedicatedPalette();       // builds and applies full-color dedicated palette
+    } else if (mode == 4) {
+        processWithDedicatedGreyscale();     // builds and applies dedicated greyscale palette
     } else {
         cout << "Invalid mode selected.\n";
         return;
@@ -88,17 +105,18 @@ void Function2() {
     SDL_UpdateWindowSurface(window);
 }
 
-//  Loading
+//  Saving
 void Function3() {
 
-    // Load the image from the file
+    saveCustomFile();
 
     SDL_UpdateWindowSurface(window);
 }
 
+// Loading
 void Function4() {
 
-    //...
+    loadCustomFile("imageCustom.cg6");
 
     SDL_UpdateWindowSurface(window);
 }
@@ -126,7 +144,18 @@ void Function7() {
 
 void Function8() {
 
-    //...
+    // I was suprised by how smooth 64 shades of grey looked
+    // -Ahmet
+    for (int i = 0; i < 64; ++i) {
+    uint8_t grey = round(i * 255.0 / 63.0);
+    for (int x = i * 5; x < (i + 1) * 5; ++x) {
+        for (int y = 0; y < 50; ++y) {
+            setPixel(x, y, grey, grey, grey);
+        }
+    }
+}
+SDL_UpdateWindowSurface(window);
+
 
     SDL_UpdateWindowSurface(window);
 }

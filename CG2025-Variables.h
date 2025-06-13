@@ -3,6 +3,7 @@
 #define CG2025_VARIABLES_H_INCLUDED
 
 #include <SDL2/SDL.h>
+#include <vector>
 
 #define screenWidth 640
 #define screenHeight 400
@@ -18,6 +19,8 @@ extern int howManyColours;
 extern int mode;
 extern int dithering;
 extern int compression;
+extern std::vector<uint8_t> finalImageData;
+extern SDL_Color dedicatedPalette[64];
 
 
 #endif // CG2025_VARIABLES_H_INCLUDED

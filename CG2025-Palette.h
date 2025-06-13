@@ -8,7 +8,13 @@
 #include <cmath>
 using namespace std;
 
+Uint8 from24Cto6C(SDL_Color colour);
+SDL_Color from6Cto24C(Uint8 colour6bit);
 int countUniqueColors();
+
+void pack8PixelsTo6Bytes(Uint8 pixels[8], Uint8 packed[6]);
+void unpack6BytesTo8Pixels(Uint8 packed[6], Uint8 pixels[8]);
+
 void processWithImposedPalette();
 void processWithImposedGreyscale();
 void processWithDedicatedGreyscale();
