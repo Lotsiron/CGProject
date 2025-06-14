@@ -31,58 +31,66 @@ void drawPalette6(int px, int py, SDL_Color pal8[]) {
         }
     }
 }
+void floyd_steinberg_6bit_corrected(int width, int height) {
 
-void floyd_steinberg_6bit(int width, int height) {
     float rError[width + 2][height + 2] = {0};
     float gError[width + 2][height + 2] = {0};
     float bError[width + 2][height + 2] = {0};
+    memset(rError, 0, sizeof(rError)); // Azzera gli errori
+    memset(gError, 0, sizeof(gError));
+    memset(bError, 0, sizeof(bError));
 
-    const int levels = 4; // 2 bits per channel
-    const float step = 255.0f / (levels - 1);  // = 85.0
     const int offset = 1;
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            SDL_Color color = getPixel(x, y);
+            SDL_Color original = getPixel(x, y);  // Leggi dall'immagine originale (parte sinistra)
 
-            // Apply error
-            float r = color.r + rError[x + offset][y];
-            float g = color.g + gError[x + offset][y];
-            float b = color.b + bError[x + offset][y];
+            // Applica l'errore propagato
+            float r = original.r + rError[x + offset][y];
+            float g = original.g + gError[x + offset][y];
+            float b = original.b + bError[x + offset][y];
 
-            // Clamp
-            r = std::max(0.0f, std::min(255.0f, r));
-            g = std::max(0.0f, std::min(255.0f, g));
-            b = std::max(0.0f, std::min(255.0f, b));
+            // Clamp tra 0-255
+            r = std::min(255.0f, std::max(0.0f, r));
+            g = std::min(255.0f, std::max(0.0f, g));
+            b = std::min(255.0f, std::max(0.0f, b));
 
-            // Quantize to 4 levels per channel
-            Uint8 rQuant = round(r / step) * step;
-            Uint8 gQuant = round(g / step) * step;
-            Uint8 bQuant = round(b / step) * step;
+            // Quantizza al colore della palette 6-bit più vicino
+            SDL_Color quantized = from6Cto24C(from24Cto6C({Uint8(r), Uint8(g), Uint8(b)}));
 
-            // Set the quantized pixel
-            setPixel(x + width, y, rQuant, gQuant, bQuant);
+            // Scrivi il pixel quantizzato nella parte destra dello schermo
+            setPixel(x + width, y, quantized.r, quantized.g, quantized.b);
 
-            // Calculate error
-            float errR = r - rQuant;
-            float errG = g - gQuant;
-            float errB = b - bQuant;
+            // Calcola l'errore
+            float errR = r - quantized.r;
+            float errG = g - quantized.g;
+            float errB = b - quantized.b;
 
-            // Diffuse error
-            rError[x + 1 + offset][y    ] += errR * 7.0f / 16.0f;
-            rError[x - 1 + offset][y + 1] += errR * 3.0f / 16.0f;
-            rError[x     + offset][y + 1] += errR * 5.0f / 16.0f;
-            rError[x + 1 + offset][y + 1] += errR * 1.0f / 16.0f;
+            // Propaga l'errore usando Floyd-Steinberg (con bounds checking)
+            if (x + 1 < width) {
+                rError[x + 1 + offset][y] += errR * 7.0f / 16.0f;
+                gError[x + 1 + offset][y] += errG * 7.0f / 16.0f;
+                bError[x + 1 + offset][y] += errB * 7.0f / 16.0f;
+            }
 
-            gError[x + 1 + offset][y    ] += errG * 7.0f / 16.0f;
-            gError[x - 1 + offset][y + 1] += errG * 3.0f / 16.0f;
-            gError[x     + offset][y + 1] += errG * 5.0f / 16.0f;
-            gError[x + 1 + offset][y + 1] += errG * 1.0f / 16.0f;
+            if (y + 1 < height) {
+                if (x - 1 >= 0) {
+                    rError[x - 1 + offset][y + 1] += errR * 3.0f / 16.0f;
+                    gError[x - 1 + offset][y + 1] += errG * 3.0f / 16.0f;
+                    bError[x - 1 + offset][y + 1] += errB * 3.0f / 16.0f;
+                }
 
-            bError[x + 1 + offset][y    ] += errB * 7.0f / 16.0f;
-            bError[x - 1 + offset][y + 1] += errB * 3.0f / 16.0f;
-            bError[x     + offset][y + 1] += errB * 5.0f / 16.0f;
-            bError[x + 1 + offset][y + 1] += errB * 1.0f / 16.0f;
+                rError[x + offset][y + 1] += errR * 5.0f / 16.0f;
+                gError[x + offset][y + 1] += errG * 5.0f / 16.0f;
+                bError[x + offset][y + 1] += errB * 5.0f / 16.0f;
+
+                if (x + 1 < width) {
+                    rError[x + 1 + offset][y + 1] += errR * 1.0f / 16.0f;
+                    gError[x + 1 + offset][y + 1] += errG * 1.0f / 16.0f;
+                    bError[x + 1 + offset][y + 1] += errB * 1.0f / 16.0f;
+                }
+            }
         }
     }
     SDL_UpdateWindowSurface(window);
@@ -467,8 +475,13 @@ void Function3() {
 
     }
     else if(dithering==2) {
-        floyd_steinberg_6bit(screenWidth/2, screenHeight/2);
+        floyd_steinberg_6bit_corrected(screenWidth/2, screenHeight/2);
 
+    }
+	cout << "First pixels after processing:" << endl;
+    for(int i = 0; i < 3; i++) {
+        SDL_Color c = getPixel(i, 0);
+        cout << "Pixel(" << i << ",0): R=" << (int)c.r << " G=" << (int)c.g << " B=" << (int)c.b << endl;
     }
 
 
