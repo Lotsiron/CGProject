@@ -1,10 +1,20 @@
-This is a project for the computer graphics class in Cracow University of Technology for the erasmus 2025 program.
-Project contributors are
-  Ahmet Yasin Pekdemir
-  Michele Zazzaretti
-  Alejandro Roman Lopez
+	This is a project for the computer graphics class in Cracow University of Technology for the erasmus 2025 program.
+	Project contributors are
+	  Ahmet Yasin Pekdemir
+	  Michele Zazzaretti
+	  Alejandro Roman Lopez
+	
+	This is a program that saves and loads images in different formats and compressions.
 
-This is a program that saves and loads images in different formats and compressions.
+ 	--HOW TO USE--
+	Load images with a-s-d-f-g-h-j-k-l-z-x-c
+	Clear screen with b
+
+	Press 1 to select dithering and process options
+	Press 2 to process loaded the image.
+ 		Left is the loaded original image and right is the processed image
+	Press 3 to save the right image
+ 	Press 4 to load the saved image to the left
 
 
 	- File Format:
