@@ -4,8 +4,33 @@
 #include "CG2025-Functions.h"
 #include "CG2025-Files.h"
 
-int countUniqueColors(){
-    // to be made
+int countUniqueColors(bool greyscale) {
+    cleanPalette();
+
+    for (int y = 0; y < screenHeight / 2; y++) {
+        for (int x = 0; x < screenWidth / 2; x++) {
+            SDL_Color c = getPixel(x, y);
+
+            // the image might have more than 64 colours but less brightness levels than that
+            // such an image will not be allowed for dedicated palette but will be allowed for dedicated grayscale palette
+            if (greyscale) {
+                float brightness = 0.299f * c.r + 0.587f * c.g + 0.114f * c.b;
+                uint8_t grey = static_cast<uint8_t>(round(brightness));
+                SDL_Color greyColor = {grey, grey, grey};
+                checkColour(greyColor);
+            } else {
+                checkColour(c);
+            }
+
+            if (howManyColours > 64) {
+                return howManyColours; // early exit
+            }
+        }
+    }
+    int colourCount = howManyColours;
+    howManyColours = 0; // this global variable will be reused
+
+    return colourCount;
 }
 
 void drawPalette(int px, int py, SDL_Color* pal8, int count){
@@ -260,6 +285,64 @@ void processWithDedicatedPalette() {
     compressImageBlocks(rawPackedBlocks);
 }
 
-void processWithDedicatedGreyscale(){
-    // to be made
+void processWithDedicatedGreyscale() {
+    cleanPalette();
+    std::vector<uint8_t> rawPackedBlocks;
+
+    // 1. First pass — build greyscale palette
+    for (int y = 0; y < screenHeight / 2; y++) {
+        for (int x = 0; x < screenWidth / 2; x++) {
+            SDL_Color colour = getPixel(x, y);
+
+            float brightness = 0.299f * colour.r + 0.587f * colour.g + 0.114f * colour.b;
+            uint8_t grey = static_cast<uint8_t>(std::round(brightness));
+
+            SDL_Color greyColor = { grey, grey, grey };
+            int index = checkColour(greyColor); // uses global palette8[]
+            if (howManyColours > 64) {
+                std::cout << "Too many greyscale shades for dedicated greyscale palette.\n";
+                return;
+            }
+        }
+    }
+
+    // 2. Copy palette8[] to dedicatedPalette[]
+    for (int i = 0; i < howManyColours; i++) {
+        dedicatedPalette[i] = palette8[i];
+    }
+
+    // 3. Second pass — index + display + collect blocks
+    for (int blockX = 0; blockX < screenWidth / 2; blockX += 8) {
+        for (int y = 0; y < screenHeight / 2; y++) {
+            uint8_t pixelGroup[8] = {0};
+
+            for (int i = 0; i < 8; i++) {
+                int x = blockX + i;
+                if (x >= screenWidth / 2) {
+                    pixelGroup[i] = 0;
+                    continue;
+                }
+
+                SDL_Color colour = getPixel(x, y);
+
+                float brightness = 0.299f * colour.r + 0.587f * colour.g + 0.114f * colour.b;
+                uint8_t grey = static_cast<uint8_t>(std::round(brightness));
+                SDL_Color greyColor = { grey, grey, grey };
+
+                int index = checkColour(greyColor);
+                pixelGroup[i] = index;
+
+                SDL_Color visual = dedicatedPalette[index];
+                setPixel(x + screenWidth / 2, y, visual.r, visual.g, visual.b);
+            }
+
+            uint8_t packed[6];
+            pack8PixelsTo6Bytes(pixelGroup, packed);
+            rawPackedBlocks.insert(rawPackedBlocks.end(), packed, packed + 6);
+        }
+    }
+
+    drawPalette(0, 210, palette8, howManyColours);
+    // 4. Compress and store
+    compressImageBlocks(rawPackedBlocks);
 }

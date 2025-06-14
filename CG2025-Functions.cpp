@@ -16,7 +16,7 @@ void applyFloydSteinbergDithering(){
 void Function1() {
     // Ask dithering
     char ditherChoice;
-    cout << "Do you want dithering? (Y/N): ";
+    cout << "\n Do you want dithering? (Y/N): ";
     cin >> ditherChoice;
     ditherChoice = toupper(ditherChoice); // in case the user inputs "y" turns it into "Y"
 
@@ -52,9 +52,10 @@ void Function1() {
         cin >> mode;
 
         if (mode == 3 || mode == 4) {
-            int colorCount = countUniqueColors();
+            bool isGreyscale = (mode == 4);
+            int colorCount = countUniqueColors(isGreyscale);
             if (colorCount > 64) {
-                cout << "Too many colors (" << colorCount << ") for dedicated mode, it needs to be 64 or under. Please choose another.\n";
+                cout << "Too many colors for dedicated mode, it needs to be 64 or under. Please choose another.\n";
                 continue; // loop again
             } else {
                 howManyColours = colorCount;
@@ -116,6 +117,7 @@ void Function3() {
 // Loading
 void Function4() {
 
+    cout << "\n Loading image...";
     loadCustomFile("imageCustom.cg6");
 
     SDL_UpdateWindowSurface(window);
