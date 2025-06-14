@@ -83,12 +83,6 @@ int main(int argc, char* argv[]) {
                     loadBMP("image8.bmp", 0, 0);
                 if (event.key.keysym.sym == SDLK_l)
                     loadBMP("image9.bmp", 0, 0);
-		if (event.key.keysym.sym == SDLK_z)
-                    loadBMP("image64-1.bmp", 0, 0);
-                if (event.key.keysym.sym == SDLK_x)
-                    loadBMP("image64-2.bmp", 0, 0);
-                if (event.key.keysym.sym == SDLK_c)
-                    loadBMP("image64-3.bmp", 0, 0);
                 if (event.key.keysym.sym == SDLK_b)
                     clearScreen(0, 0, 0);
                 else

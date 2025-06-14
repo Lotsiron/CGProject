@@ -5,37 +5,130 @@
 #include "CG2025-Files.h"
 
 
+// user selected options
 void Function1() {
+    // Ask dithering
+    char ditherChoice;
+    cout << "\n Do you want dithering? (Y/N): ";
+    cin >> ditherChoice;
+    ditherChoice = toupper(ditherChoice); // in case the user inputs "y" turns it into "Y"
 
-    //...
+    if (ditherChoice == 'Y') {
+        int method;
+        cout << "Choose dithering method:\n";
+        cout << "1. Bayer 4x4\n";
+        cout << "2. Floyd-Steinberg\n";
+        cout << "Enter choice (1 or 2): ";
+        cin >> method;
 
+        if (method == 1)
+            dithering = 1;
+        else if (method == 2)
+            dithering = 2;
+        else {
+            cout << "Invalid choice. No dithering will be applied.\n";
+            dithering = 0;
+        }
+    } else {
+        dithering = 0;
+    }
+
+    // Ask color mode
+    // it is a loop so if user enters incorrectly, it goes back to the start
+    while (true) {
+        cout << "Choose color mode:\n";
+        cout << "1. Imposed Palette (6-bit)\n";
+        cout << "2. Imposed Grayscale (6-bit)\n";
+        cout << "3. Dedicated Palette (24-bit, max 64 colors)\n";
+        cout << "4. Dedicated Grayscale (24-bit, max 64 colors)\n";
+        cout << "Enter choice (1-4): ";
+        cin >> mode;
+
+        if (mode == 3 || mode == 4) {
+            bool isGreyscale = (mode == 4);
+            int colorCount = countUniqueColors(isGreyscale);
+            if (colorCount > 64) {
+                cout << "Too many colors for dedicated mode, it needs to be 64 or under. Please choose another.\n";
+                continue; // loop again
+            } else {
+                howManyColours = colorCount;
+                cout << "Using dedicated mode with " << colorCount << " unique colors.\n";
+                break;
+            }
+        } else if (mode >= 1 && mode <= 4) {
+            break;
+        } else {
+            cout << "Invalid selection.\n";
+            continue;
+        }
+    }
+    cout << endl << " The selected options are: ";
+    if(dithering==0)
+        cout << "No dithering, ";
+    if(dithering==1)
+        cout << "Bayer4x4 Dithering, ";
+    if(dithering==2)
+        cout << "Floyd-Steinberg Dithering, ";
+    if(mode==1)
+        cout << "Imposed Palette \n";
+    if(mode==2)
+        cout << "Imposed Greyscale \n";
+    if(mode==3)
+        cout << "Dedicated Palette \n";
+    if(mode==4)
+        cout << "Dedicated Greyscale \n";
+
+    cout<< " Options are saved, press 2 on the screen to process the image on the screen \n";
     SDL_UpdateWindowSurface(window);
 }
 
+// Color Reduction and saving
 void Function2() {
 
-    //...
 
+    if (mode == 1) {
+        processWithImposedPalette();         // quantizes to imposed palette, shows result
+    } else if (mode == 2) {
+        processWithImposedGreyscale();       // 6-bit greyscale
+    } else if (mode == 3) {
+        processWithDedicatedPalette();       // builds and applies full-color dedicated palette
+    } else if (mode == 4) {
+        processWithDedicatedGreyscale();     // builds and applies dedicated greyscale palette
+    } else {
+        cout << "Invalid mode selected.\n";
+        return;
+    }
     SDL_UpdateWindowSurface(window);
 }
 
+//  Saving
 void Function3() {
 
-    //...
+    saveCustomFile();
 
     SDL_UpdateWindowSurface(window);
 }
 
+// Loading
 void Function4() {
 
-    //...
+    cout << "\n Loading image...";
+    loadCustomFile("imageCustom.cg6");
 
     SDL_UpdateWindowSurface(window);
 }
 
+// dither test
 void Function5() {
 
-    //...
+    cout << "\n dithering mode: " << dithering;
+    if (dithering == 1 ){
+        updateBayerTable4();
+        applyBayerDithering(screenWidth / 2, screenHeight / 2);
+    }
+    if (dithering == 2 )
+        applyFloydSteinbergDithering(screenWidth / 2, screenHeight / 2);
+
 
     SDL_UpdateWindowSurface(window);
 }
@@ -56,7 +149,16 @@ void Function7() {
 
 void Function8() {
 
-    //...
+    // I was suprised by how smooth 64 shades of grey looked
+    // -Ahmet
+    for (int i = 0; i < 64; ++i) {
+    uint8_t grey = round(i * 255.0 / 63.0);
+        for (int x = i * 5; x < (i + 1) * 5; ++x) {
+            for (int y = 0; y < 50; ++y) {
+                setPixel(x, y, grey, grey, grey);
+            }
+        }
+    }
 
     SDL_UpdateWindowSurface(window);
 }
