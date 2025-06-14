@@ -13,9 +13,6 @@
 extern SDL_Window* window;
 extern SDL_Surface* screen;
 
-extern int BayerTable4[4][4];
-extern float updatedBayerTable4[4][4];
-
 
 extern SDL_Color palette8[screenWidth*screenHeight];
 extern int howManyColours;

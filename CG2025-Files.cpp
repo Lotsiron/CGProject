@@ -49,7 +49,6 @@ void saveCustomFile() {
     cout << "Image saved as: \"imageCustom.cg6\" " << endl;
 }
 
-
 void loadCustomFile(const string& filename) {
     ifstream input(filename, ios::binary);
     if (!input.is_open()) {
@@ -87,7 +86,7 @@ void loadCustomFile(const string& filename) {
         }
     }
 
-    // 3. Read compressed image data
+    // 3. Read compressed data
     std::vector<uint8_t> compressed(datasize);
     input.read((char*)compressed.data(), datasize);
     input.close();
@@ -101,9 +100,11 @@ void loadCustomFile(const string& filename) {
         for (size_t i = 0; i < compressed.size();) {
             int8_t control = compressed[i++];
             if (control >= 0) {
+                // literal
                 for (int j = 0; j <= control; ++j)
                     decompressed.push_back(compressed[i++]);
             } else {
+                // repeat
                 uint8_t value = compressed[i++];
                 for (int j = 0; j < 1 - control; ++j)
                     decompressed.push_back(value);
@@ -119,52 +120,37 @@ void loadCustomFile(const string& filename) {
         }
     }
 
-    // 5. Reconstruct with 8-pixel block snaking
-    int blockWidth = width;
-    int heightLimit = height;
-
-    int blockX = 0;
-    int y = 0;
-
+    // 5. Unpack and display
+    int x = 0, y = 0;
     for (size_t i = 0; i < decompressed.size(); i += 6) {
-        if (blockX >= blockWidth) break; // just in case
+        uint8_t block[6];
+        std::copy(decompressed.begin() + i, decompressed.begin() + i + 6, block);
 
-        uint8_t packed[6];
-        std::copy(decompressed.begin() + i, decompressed.begin() + i + 6, packed);
         uint8_t pixels[8];
-        unpack6BytesTo8Pixels(packed, pixels);
+        unpack6BytesTo8Pixels(block, pixels);
 
         for (int j = 0; j < 8; ++j) {
-            int x = blockX + j;
-            if (x >= blockWidth || y >= heightLimit)
-                continue;
+            if (x >= width) {
+                x = 0;
+                y++;
+            }
+            if (y >= height) break;
 
             SDL_Color c;
-            if (mode == 3 || mode == 4) {
-                // Dedicated palette
-                c = dedicatedPalette[pixels[j] % 64];
-            } else if (mode == 2) {
-                // Imposed grayscale: pixels[j] is a brightness level 0–63
-                uint8_t grey = static_cast<uint8_t>(round(pixels[j] * 255.0f / 63.0f));
-                c = {grey, grey, grey};
-            } else {
-                // Imposed RGB palette
+            if (mode == 1 || mode == 2) {
                 c = from6Cto24C(pixels[j]);
+            } else if (mode == 3 || mode == 4) {
+                c = dedicatedPalette[pixels[j] % 64]; // safety
             }
 
             setPixel(x, y, c.r, c.g, c.b);
-        }
-
-        // Move to next row
-        y++;
-        if (y >= heightLimit) {
-            y = 0;
-            blockX += 8;
+            x++;
         }
     }
 
     SDL_UpdateWindowSurface(window);
 }
+
 
 
 

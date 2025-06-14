@@ -7,6 +7,9 @@
 #include <math.h>
 #include <SDL2/SDL.h>
 
+void applyBayerDithering();
+void applyFloydSteinbergDithering();
+
 void Function1();
 void Function2();
 void Function3();

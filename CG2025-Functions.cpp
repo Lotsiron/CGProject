@@ -4,12 +4,110 @@
 #include "CG2025-Palette.h"
 #include "CG2025-Files.h"
 
+void applyBayerDithering() {
+    // 4x4 Bayer matrix (values 0-15, normalized to 0-1)
+    float bayerMatrix[4][4] = {
+        {0.0f/16, 8.0f/16, 2.0f/16, 10.0f/16},
+        {12.0f/16, 4.0f/16, 14.0f/16, 6.0f/16},
+        {3.0f/16, 11.0f/16, 1.0f/16, 9.0f/16},
+        {15.0f/16, 7.0f/16, 13.0f/16, 5.0f/16}
+    };
+
+    for (int y = 0; y < screenHeight / 2; y++) {
+        for (int x = 0; x < screenWidth / 2; x++) {
+            SDL_Color original = getPixel(x, y);
+
+            // Get dither threshold from matrix
+            float threshold = bayerMatrix[y % 4][x % 4];
+
+            // Apply dithering to each channel
+            uint8_t newR = (original.r / 255.0f + threshold > 0.5f) ? 255 : 0;
+            uint8_t newG = (original.g / 255.0f + threshold > 0.5f) ? 255 : 0;
+            uint8_t newB = (original.b / 255.0f + threshold > 0.5f) ? 255 : 0;
+
+            // For 6-bit quantization instead of binary:
+            // newR = std::min(255, (int)(original.r + threshold * 85)); // 85 = 255/3
+
+            setPixel(x, y, newR, newG, newB);
+        }
+    }
+}
+void applyFloydSteinbergDithering() {
+    // Create a copy of the image data to work with
+    std::vector<std::vector<SDL_Color>> imageData(screenHeight / 2,
+                                                  std::vector<SDL_Color>(screenWidth / 2));
+
+    // Load current image into our working array
+    for (int y = 0; y < screenHeight / 2; y++) {
+        for (int x = 0; x < screenWidth / 2; x++) {
+            imageData[y][x] = getPixel(x, y);
+        }
+    }
+
+    // Apply Floyd-Steinberg dithering
+    for (int y = 0; y < screenHeight / 2; y++) {
+        for (int x = 0; x < screenWidth / 2; x++) {
+            SDL_Color oldColor = imageData[y][x];
+
+            // Quantize to 6-bit (or your target palette)
+            uint8_t newR = round(oldColor.r * 3.0 / 255.0) * 255 / 3;
+            uint8_t newG = round(oldColor.g * 3.0 / 255.0) * 255 / 3;
+            uint8_t newB = round(oldColor.b * 3.0 / 255.0) * 255 / 3;
+
+            SDL_Color newColor = {newR, newG, newB};
+            setPixel(x, y, newR, newG, newB);
+
+            // Calculate error
+            int errorR = oldColor.r - newR;
+            int errorG = oldColor.g - newG;
+            int errorB = oldColor.b - newB;
+
+            // Distribute error to neighboring pixels
+            if (x + 1 < screenWidth / 2) {
+                imageData[y][x + 1].r = std::max(0, std::min(255,
+                    (int)imageData[y][x + 1].r + errorR * 7 / 16));
+                imageData[y][x + 1].g = std::max(0, std::min(255,
+                    (int)imageData[y][x + 1].g + errorG * 7 / 16));
+                imageData[y][x + 1].b = std::max(0, std::min(255,
+                    (int)imageData[y][x + 1].b + errorB * 7 / 16));
+            }
+
+            if (y + 1 < screenHeight / 2) {
+                if (x - 1 >= 0) {
+                    imageData[y + 1][x - 1].r = std::max(0, std::min(255,
+                        (int)imageData[y + 1][x - 1].r + errorR * 3 / 16));
+                    imageData[y + 1][x - 1].g = std::max(0, std::min(255,
+                        (int)imageData[y + 1][x - 1].g + errorG * 3 / 16));
+                    imageData[y + 1][x - 1].b = std::max(0, std::min(255,
+                        (int)imageData[y + 1][x - 1].b + errorB * 3 / 16));
+                }
+
+                imageData[y + 1][x].r = std::max(0, std::min(255,
+                    (int)imageData[y + 1][x].r + errorR * 5 / 16));
+                imageData[y + 1][x].g = std::max(0, std::min(255,
+                    (int)imageData[y + 1][x].g + errorG * 5 / 16));
+                imageData[y + 1][x].b = std::max(0, std::min(255,
+                    (int)imageData[y + 1][x].b + errorB * 5 / 16));
+
+                if (x + 1 < screenWidth / 2) {
+                    imageData[y + 1][x + 1].r = std::max(0, std::min(255,
+                        (int)imageData[y + 1][x + 1].r + errorR * 1 / 16));
+                    imageData[y + 1][x + 1].g = std::max(0, std::min(255,
+                        (int)imageData[y + 1][x + 1].g + errorG * 1 / 16));
+                    imageData[y + 1][x + 1].b = std::max(0, std::min(255,
+                        (int)imageData[y + 1][x + 1].b + errorB * 1 / 16));
+                }
+            }
+        }
+    }
+}
+
 
 // user selected options
 void Function1() {
     // Ask dithering
     char ditherChoice;
-    cout << "\n Do you want dithering? (Y/N): ";
+    cout << "Do you want dithering? (Y/N): ";
     cin >> ditherChoice;
     ditherChoice = toupper(ditherChoice); // in case the user inputs "y" turns it into "Y"
 
@@ -45,10 +143,9 @@ void Function1() {
         cin >> mode;
 
         if (mode == 3 || mode == 4) {
-            bool isGreyscale = (mode == 4);
-            int colorCount = countUniqueColors(isGreyscale);
+            int colorCount = countUniqueColors();
             if (colorCount > 64) {
-                cout << "Too many colors for dedicated mode, it needs to be 64 or under. Please choose another.\n";
+                cout << "Too many colors (" << colorCount << ") for dedicated mode, it needs to be 64 or under. Please choose another.\n";
                 continue; // loop again
             } else {
                 howManyColours = colorCount;
@@ -84,8 +181,6 @@ void Function1() {
 
 // Color Reduction and saving
 void Function2() {
-
-
     if (mode == 1) {
         processWithImposedPalette();         // quantizes to imposed palette, shows result
     } else if (mode == 2) {
@@ -112,23 +207,14 @@ void Function3() {
 // Loading
 void Function4() {
 
-    cout << "\n Loading image...";
     loadCustomFile("imageCustom.cg6");
 
     SDL_UpdateWindowSurface(window);
 }
 
-// dither test
 void Function5() {
 
-    cout << "\n dithering mode: " << dithering;
-    if (dithering == 1 ){
-        updateBayerTable4();
-        applyBayerDithering(screenWidth / 2, screenHeight / 2);
-    }
-    if (dithering == 2 )
-        applyFloydSteinbergDithering(screenWidth / 2, screenHeight / 2);
-
+    //...
 
     SDL_UpdateWindowSurface(window);
 }
@@ -153,12 +239,14 @@ void Function8() {
     // -Ahmet
     for (int i = 0; i < 64; ++i) {
     uint8_t grey = round(i * 255.0 / 63.0);
-        for (int x = i * 5; x < (i + 1) * 5; ++x) {
-            for (int y = 0; y < 50; ++y) {
-                setPixel(x, y, grey, grey, grey);
-            }
+    for (int x = i * 5; x < (i + 1) * 5; ++x) {
+        for (int y = 0; y < 50; ++y) {
+            setPixel(x, y, grey, grey, grey);
         }
     }
+}
+SDL_UpdateWindowSurface(window);
+
 
     SDL_UpdateWindowSurface(window);
 }
