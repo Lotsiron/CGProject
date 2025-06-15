@@ -11,7 +11,8 @@
 	Clear screen with b
 
 	Press 1 to select dithering and process options
-	Press 2 to process loaded the image.
+		Go to the console and choose the option inside it (y/n)
+	Press 2 to process the loaded image on the left.
  		Left is the loaded original image and right is the processed image
 	Press 3 to save the right image
  	Press 4 to load the saved image to the left
